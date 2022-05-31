@@ -1,5 +1,5 @@
 [Details]
-  Icon = "../src/images/icon.png"
+  Icon = "./src/images/icon.png"
   Name = "My App"
   Version = "0.0.1"
   Build = 3

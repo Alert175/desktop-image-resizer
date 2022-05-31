@@ -1,6 +1,9 @@
 package desktop
 
 import (
+	"desktop-image-resizer/src/internal"
+	"errors"
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -10,9 +13,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var pathToFolder string // ссылка до папки
-var imageWidth int      // ширина изображения
-var isRemoveOutput bool // очистить папку вывода
+var pathToFolder string   // ссылка до папки
+var imageWidth int        // ширина изображения
+var isRemoveOutput bool   // очистить папку вывода
+var isRecursiveCheck bool // Проверять вложенные папки
 
 func Init() {
 	application := app.New()
@@ -30,13 +34,55 @@ func Init() {
 		isRemoveOutput = b
 	})
 
+	recCheck := widget.NewCheck("Сканирование вложенных папок", func(b bool) {
+		isRecursiveCheck = b
+	})
+
 	progress := widget.NewProgressBar()
 
 	startBtn := widget.NewButton("Выполнить сжатие", func() {
-		changeProgress(progress)
+		if len(pathToFolder) == 0 {
+			err := errors.New("Не указан путь для сжатия")
+			dialog.ShowError(err, window)
+			return
+		}
+		imageWidth, errImageWidth := strconv.Atoi(widthInput.Text)
+		if errImageWidth != nil || imageWidth == 0 {
+			err := errors.New("Не указана ширина изображения")
+			dialog.ShowError(err, window)
+			return
+		}
+		fileList, _ := internal.ScanFolder(pathToFolder, isRecursiveCheck)
+		if len(fileList) == 0 {
+			err := errors.New("Не найдены изображения для сжатия")
+			dialog.ShowError(err, window)
+			return
+		}
+		errOutputFolder := internal.CheckFolder("./output")
+		if errOutputFolder != nil {
+			internal.CreateFolder("./output")
+		}
+		if isRemoveOutput == true {
+			internal.RemoveFolder("./output")
+			internal.CreateFolder("./output")
+		}
+		var errCounter int
+		progress.Min = 0
+		progress.Max = float64(len(fileList))
+		for index, path := range fileList {
+			_, err := internal.ImageResize(path, imageWidth, false, pathToFolder)
+			if err != nil {
+				errCounter += 1
+			}
+			progress.SetValue(float64(index + 1))
+		}
+		if errCounter > 0 {
+			err := errors.New("Не удалось сжать " + strconv.Itoa(errCounter) + "изображений")
+			dialog.ShowError(err, window)
+		}
 	})
 
-	content := container.NewVBox(widthInput, selectFolderBtn, rmCheck, progress, startBtn)
+	content := container.NewVBox(widthInput, selectFolderBtn, rmCheck, recCheck, progress, startBtn)
 
 	window.SetContent(content)
 	window.Resize(fyne.NewSize(800, 500))
@@ -68,7 +114,7 @@ func backgroundProcessInit() {
 
 func changeProgress(progress *widget.ProgressBar) {
 	for i := 0.0; i <= 1.0; i += 0.1 {
-		time.Sleep(time.Millisecond * 250)
+		// time.Sleep(time.Millisecond * 250)
 		progress.SetValue(i)
 	}
 }
