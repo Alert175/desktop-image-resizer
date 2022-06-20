@@ -80,6 +80,7 @@ func Init() {
 			err := errors.New("Не удалось сжать " + strconv.Itoa(errCounter) + "изображений")
 			dialog.ShowError(err, window)
 		}
+		internal.OpenWidthExplorer("./output")
 	})
 
 	content := container.NewVBox(widthInput, selectFolderBtn, rmCheck, recCheck, progress, startBtn)
