@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 )
 
@@ -80,7 +81,11 @@ func OpenWidthExplorer(argPath string) error {
 		return nil
 	}
 	if runtime.GOOS == "windows" {
-		if err := exec.Command("explorer", argPath).Start(); err != nil {
+		resultDir, errP := filepath.Abs(argPath)
+		if errP != nil {
+			return errP
+		}
+		if err := exec.Command("explorer", resultDir).Start(); err != nil {
 			return err
 		}
 		return nil

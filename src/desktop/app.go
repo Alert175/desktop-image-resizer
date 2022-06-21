@@ -17,6 +17,7 @@ var pathToFolder string   // ссылка до папки
 var imageWidth int        // ширина изображения
 var isRemoveOutput bool   // очистить папку вывода
 var isRecursiveCheck bool // Проверять вложенные папки
+var isOpenOutput bool     // Открыть папку вывода по завершению
 
 func Init() {
 	application := app.New()
@@ -36,6 +37,10 @@ func Init() {
 
 	recCheck := widget.NewCheck("Сканирование вложенных папок", func(b bool) {
 		isRecursiveCheck = b
+	})
+
+	openCheck := widget.NewCheck("Открыть папку вывода по завершению", func(b bool) {
+		isOpenOutput = b
 	})
 
 	progress := widget.NewProgressBar()
@@ -80,10 +85,13 @@ func Init() {
 			err := errors.New("Не удалось сжать " + strconv.Itoa(errCounter) + "изображений")
 			dialog.ShowError(err, window)
 		}
-		internal.OpenWidthExplorer("./output")
+		if isOpenOutput {
+			internal.OpenWidthExplorer("./output")
+		}
+
 	})
 
-	content := container.NewVBox(widthInput, selectFolderBtn, rmCheck, recCheck, progress, startBtn)
+	content := container.NewVBox(widthInput, selectFolderBtn, rmCheck, recCheck, openCheck, progress, startBtn)
 
 	window.SetContent(content)
 	window.Resize(fyne.NewSize(800, 500))
